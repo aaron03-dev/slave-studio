@@ -4,7 +4,7 @@ import './App.css';
 
 const slaves = [
     {
-        name: 'Slave 1',
+        name: 'Slave_12',
         ip: 'http://192.168.100.212:3002', // Sửa IP theo thực tế
     },
 ];
@@ -15,25 +15,57 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [folderName, setFolderName] = useState('');
 
-    const [completedSlaves, setCompletedSlaves] = useState({});
+    const [downloadQueue, setDownloadQueue] = useState({});
+    const [isDownloading, setIsDownloading] = useState({});
+
+
+    const [completedSlaves, setCompletedSlaves] = useState([]);
+
+    //useEffect(() => {
+
+
+
+    //    const interval = setInterval(() => {
+    //        axios.get('http://192.168.100.203:3001/completed-slaves')
+    //            .then((res) => {
+    //                setCompletedSlaves(res.data);
+    //            })
+    //            .catch((err) => {
+    //                console.error('Lỗi lấy trạng thái từ master:', err);
+    //            });
+    //    }, 3000); // polling mỗi 3 giây
+
+    //    return () => clearInterval(interval); // clear khi component unmount
+    //}, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            axios.get('http://localhost:3001/completed-slaves')
+            axios.get('http://192.168.100.203:3001/completed-slaves')
                 .then((res) => {
-                    setCompletedSlaves(res.data);
+                    setCompletedSlaves((prev) => {
+                        return res.data.map((newItem) => {
+                            const oldItem = prev.find(item => item.ip === newItem.ip && item.folder === newItem.folder);
+                            return {
+                                ...newItem,
+                                status: oldItem?.status || 'waiting',
+                            };
+                        });
+                    });
                 })
                 .catch((err) => {
                     console.error('Lỗi lấy trạng thái từ master:', err);
                 });
-        }, 3000); // polling mỗi 3 giây
+        }, 5000);
 
-        return () => clearInterval(interval); // clear khi component unmount
+        return () => clearInterval(interval);
     }, []);
 
-    const handleDownload = (ip) => {
-        window.open(`http://localhost:3002/download`, '_blank');
-    };
+
+    //const handleDownload = (ip) => {
+    //    window.open(`http://localhost:3001/download?ip=${ip}`, '_blank');
+    //};
+
+    
 
     const updateStatus = (ip, message) => {
         setStatuses((prev) => ({ ...prev, [ip]: message }));
@@ -45,9 +77,12 @@ function App() {
             return;
         }
 
+        let newFolderName = `${folderName}_${slave.name}`
+        console.log(newFolderName)
+
         try {
             updateStatus(slave.ip, '▶ Starting...');
-            const res = await axios.post(`${slave.ip}/start`, { folderName });
+            const res = await axios.post(`${slave.ip}/start`, { folderName: newFolderName });
             updateStatus(slave.ip, `▶ ${res.data.message}`);
         } catch (err) {
             updateStatus(slave.ip, `❌ Failed: ${err.message}`);
@@ -118,25 +153,95 @@ function App() {
     };
 
     const handleStream = (slave) => {
-        window.open('http://127.0.0.1:5000/'); // Tuỳ chỉnh link stream nếu cần
+        window.open('http://192.168.100.212:5000/'); // Tuỳ chỉnh link stream nếu cần
     };
 
-    const handleDownloadFolder = async (slave) => {
+    useEffect(() => {
+        // Mỗi khi hàng đợi thay đổi, kiểm tra và bắt đầu tải nếu chưa tải
+        Object.keys(downloadQueue).forEach((ip) => {
+            if (!isDownloading[ip] && downloadQueue[ip]?.length > 0) {
+                processDownloadQueue(ip);
+            }
+        });
+        console.log(downloadQueue)
+    }, [downloadQueue]);
+
+    useEffect(() => {
+        console.log('📦 completedSlaves updated:', completedSlaves);
+    }, [completedSlaves]);
+
+    const processDownloadQueue = async (ip) => {
+        const queue = downloadQueue[ip];
+        if (!queue || queue.length === 0) return;
+
+        const folder = queue[0]; // lấy folder đầu tiên
+        setIsDownloading(prev => ({ ...prev, [ip]: true }));
+
+        updateFolderStatus(ip, folder, 'downloading');
+
         try {
-            const res = await axios.get(`${slave.ip}/download-folder`, {
-                responseType: 'blob',
-            });
-            const blob = new Blob([res.data]);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `result_from_${slave.name}.zip`;
-            link.click();
-            window.URL.revokeObjectURL(url);
+            await axios.get(`http://localhost:3001/download?ip=${ip}&&folder=${folder}`);
+            console.log(ip, folder)
+            updateFolderStatus(ip, folder, 'downloaded');
         } catch (err) {
-            alert(`❌ Download Failed: ${err.message}`);
+            updateFolderStatus(ip, folder, 'failed');
+            console.error(`Download failed for ${folder} on ${ip}`, err);
         }
+
+        setDownloadQueue(prev => {
+            const newQueue = { ...prev };
+            newQueue[ip] = newQueue[ip].slice(1); // remove folder đã tải
+            return newQueue;
+        });
+
+        setIsDownloading(prev => ({ ...prev, [ip]: false }));
     };
+
+    //const updateFolderStatus = (ip, folder, status) => {
+    //    setCompletedSlaves(prev => prev.map(item => {
+    //        if (item.ip === ip && item.folder === folder) {
+    //            return { ...item, status };
+    //        }
+    //        return item;
+    //    }));
+    //};
+
+    const updateFolderStatus = (ip, folder, status) => {
+        setCompletedSlaves(prev => {
+            // Tạo một mảng mới thay vì sử dụng map
+            const updated = [...prev];
+            const index = updated.findIndex(item => item.ip === ip && item.folder === folder);
+
+            if (index !== -1) {
+                updated[index] = { ...updated[index], status };
+            }
+
+            return updated;
+        });
+    };
+
+
+    const handleDownload = (ip, folder) => {
+        setCompletedSlaves(prev => prev.map(item => {
+            if (item.ip === ip && item.folder === folder) {
+                return { ...item, status: 'queued' };
+            }
+            return item;
+        }));
+
+        setDownloadQueue(prevQueue => {
+            const newQueue = { ...prevQueue };
+            if (!newQueue[ip]) newQueue[ip] = [];
+            // Tránh trùng folder
+            if (!newQueue[ip].includes(folder)) {
+                newQueue[ip].push(folder);
+            }
+            return newQueue;
+        });
+    };
+
+
+    
 
     return (
         <div className="app">
@@ -175,41 +280,61 @@ function App() {
             </div>
 
             <div className="grid">
-                {slaves.map((slave, index) => (
-                    <div className="card flex space-around" key={index}>
-                        <h3>{slave.name}</h3>
-                        <p>{slave.ip}</p>
+                {slaves.map((slave, index) => {
+                    // Lọc ra tất cả các item có IP trùng với slave
+                    const completedList = completedSlaves.filter(item => item.ip === slave.ip && item.done);
 
-                        <button onClick={() => handleStartSlave(slave)} disabled={loading}>
-                            ▶ Start
-                        </button>
-                        <button onClick={() => handleStopSlave(slave)} disabled={loading}>
-                            🛑 Stop
-                        </button>
-                        <button onClick={() => handleStream(slave)} disabled={loading}>
-                            ▶ See more
-                        </button>
+                    return (
+                        <div className="card flex flex-col gap-2 p-4 border mb-4" key={index}>
+                            <div>
+                                <h3>{slave.name}</h3>
+                                <p>{slave.ip}</p>
+                            </div>
 
-                        {Object.keys(completedSlaves).length === 0 ? (
-                            <p>Chưa có máy nào phản hồi</p>
-                        ) : (
-                            Object.entries(completedSlaves).map(([ip, isDone]) => (
-                                <div key={ip} className="border p-2 mb-2 rounded shadow">
-                                    <p>🖥️ IP: {ip}</p>
-                                    <p>Trạng thái: {isDone ? '✅ Hoàn thành' : '⏳ Đang chạy'}</p>
-                                    {isDone && (
-                                        <button
-                                            className="bg-blue-500 text-white px-3 py-1 rounded mt-2"
-                                            onClick={() => handleDownload(ip)}
-                                        >
-                                            📥 Tải kết quả
-                                        </button>
-                                    )}
+                            <div className="flex gap-2">
+                                <button onClick={() => handleStartSlave(slave)} disabled={loading}>
+                                    ▶ Start
+                                </button>
+                                <button onClick={() => handleStopSlave(slave)} disabled={loading}>
+                                    🛑 Stop
+                                </button>
+                                <button onClick={() => handleStream(slave)} disabled={loading}>
+                                    ▶ See more
+                                </button>
+                            </div>
+
+                            {completedList.length > 0 && completedList.map((item, i) => (
+                                <div key={i} className="flex items-center gap-4 mt-2 border p-2 rounded">
+                                    <input
+                                        type="checkbox"
+                                        className={`w-4 h-4 ${item.state === "downloaded" ? 'checkbox-green' : ''}`}
+                                        checked={item.status === "downloaded"}
+                                        readOnly
+                                    />
+                                    <span className="text-sm text-gray-700">
+                                        📁 {item.folder}
+                                
+                                    </span>
+                                    <button
+                                        className={`text-white px-3 py-1 rounded ${item.status === 'downloading' ? 'bg-gray-400' : 'bg-blue-500'}`}
+                                        onClick={() => handleDownload(item.ip, item.folder)}
+                                        disabled={item.status === 'downloading' || item.status === 'downloaded'}
+                                    >
+                                        {item.status === 'downloading' ? '⏳' : '📥'}
+                                    </button>
+                                    <button
+                                        className="bg-red-500 text-white px-3 py-1 rounded"
+                                        onClick={() => updateFolderStatus(item.ip, item.folder, null)}
+                                    >
+                                        🗑️
+                                    </button>
                                 </div>
-                            ))
-                        )}
-                    </div>
-                ))}
+                            ))}
+
+                        </div>
+                    );
+                })}
+
             </div>
         </div>
     );
