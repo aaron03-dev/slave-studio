@@ -1,0 +1,61 @@
+.camera-config {
+    padding: 1rem;
+    max-width: 400px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #333;
+}
+
+    .header span {
+        margin-left: 8px;
+    }
+
+.inputs {
+    margin-top: 1rem;
+}
+
+.input-label {
+    font-size: 0.875rem;
+    font-weight: medium;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.input-range {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.input-select {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.br-selector,
+.lut-selector {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+    .br-selector label,
+    .lut-selector label {
+        font-size: 0.875rem;
+        font-weight: medium;
+        margin-left: 0.5rem;
+    }
+
+    .lut-selector input {
+        margin-right: 0.5rem;
+    }

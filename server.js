@@ -2,7 +2,8 @@
 const cors = require('cors');
 const app = express();
 const PORT = 3001;
-
+const AdmZip = require('adm-zip'); // Add this dependency
+const { exec } = require('child_process'); // For running the .exe
 const ftp =  require('basic-ftp');
 const axios = require('axios');
 const fs = require('fs');
@@ -60,11 +61,12 @@ async function downloadFolderFromSlave(slaveIp, folder) {
         const zipFileName = `${folderName}.zip`;
         const remoteFolder = `D:\\${folderName}`;
         const localZipPath = path.join("D:/", zipFileName);
+        const extractPath = path.join("D:/", folderName);
         console.log(`📦 Tải file: ${zipFileName} từ ${remoteFolder} về ${localZipPath}`);
         
 
         // 1. Yêu cầu slave nén thư mục và bật FTP
-        await axios.post(`${slaveIp}/start-ftp?folder=${encodeURIComponent(remoteFolder)}`);
+        await axios.post(`http://${slaveIp}:3002/start-ftp?folder=${encodeURIComponent(remoteFolder)}`);
         console.log(`⚙️ Đã yêu cầu slave bật FTP chia sẻ file ZIP`);
 
         // 2. Kết nối FTP và tải file ZIP
@@ -86,6 +88,36 @@ async function downloadFolderFromSlave(slaveIp, folder) {
         console.log(`🎉 Đã tải file ZIP thành công từ ${slaveIp}`);
 
         client.close();
+
+        // 3. Giải nén file ZIP
+        console.log(`📂 Giải nén ${zipFileName} vào ${extractPath}`);
+        const zip = new AdmZip(localZipPath);
+        zip.extractAllTo(extractPath, true); // true để overwrite nếu thư mục đã tồn tại
+        console.log(`✅ Đã giải nén thành công`);
+
+        // 4. Sao chép 2 file vào thư mục đã giải nén
+        const cvExeSource = 'C:\\Users\\Admin\\Documents\\CV.exe';
+        const opencvDllSource = 'C:\\Users\\Admin\\Documents\\opencv_world4110d.dll';
+        const cvExeDest = path.join(extractPath, 'CV.exe');
+        const opencvDllDest = path.join(extractPath, 'opencv_world4110d.dll');
+
+        fs.copyFileSync(cvExeSource, cvExeDest);
+        fs.copyFileSync(opencvDllSource, opencvDllDest);
+        console.log(`📑 Đã sao chép CV.exe và opencv_world4110d.dll vào ${extractPath}`);
+
+        // 5. Chạy file CV.exe
+        console.log(`🚀 Đang chạy CV.exe từ ${cvExeDest}`);
+        exec(`"${cvExeDest}"`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`❌ Lỗi khi chạy CV.exe: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`⚠️ stderr: ${stderr}`);
+                return;
+            }
+            console.log(`✅ stdout: ${stdout}`);
+        });
     } catch (err) {
         console.error(`❌ Lỗi khi tải file ZIP từ ${slaveIp}:`, err.message);
         throw err;

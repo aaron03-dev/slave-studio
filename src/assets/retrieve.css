@@ -1,0 +1,182 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+}
+
+.container {
+    min-height: 100vh;
+    background: linear-gradient(to bottom right, black, purple);
+    padding: 20px;
+    color: white;
+    width: 100%
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.subtitle {
+    font-size: 12px;
+    color: gray;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.left-panel {
+    flex: 1 1 66%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    position: relative;
+}
+
+.label {
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #804dff50;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 4px;
+}
+
+.clear-button {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.hint {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 4px;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+}
+
+.retrieve-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid #804dff;
+    color: #d5b3ff;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .retrieve-button:hover {
+        background: rgba(128, 77, 255, 0.2);
+    }
+
+.card {
+    background: rgba(128, 128, 128, 0.2);
+    border: 1px solid #804dff50;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.card-desc {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.takes-box {
+    border: 1px solid #804dff50;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 300px;
+}
+
+.take-list {
+    margin-top: 8px;
+}
+
+.take-item {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.progress-container {
+    flex: 1 1 30%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.progress-wrapper {
+    position: relative;
+    width: 192px;
+    height: 192px;
+}
+
+.progress-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.progress-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 20, 20, 0.8);
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+    .progress-label span {
+        font-size: 32px;
+        font-weight: bold;
+    }
