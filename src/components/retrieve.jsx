@@ -3,18 +3,20 @@ import { useState } from "react"
 import "../assets/retrieve.css" // Đừng quên import file CSS
 
 export default function Retrieve() {
-    const [takeName, setTakeName] = useState("Volumetric_Capture_Take1")
+    const [takeName, setTakeName] = useState("Chọn thư mục")
     const [progress, setProgress] = useState(55)
 
-    const recordedTakes = [
-        "Volumetric_Capture_Take1",
-        "Volumetric_Capture_Take2",
-        "Volumetric_Capture_Take3",
-        "Volumetric_Capture_Take4",
-        "Volumetric_Capture_Take5",
-        "Volumetric_Capture_TakeCalibration",
-        "Volumetric_Capture_Take6",
-    ]
+    const handleFolderClick = (folderName) => {
+        setTakeName(folderName);
+    };
+
+    // Function to handle deleting a folder from convert array
+    const handleDelete = (folderName) => {
+        //setConvert(prev => prev.filter(item => item.name !== folderName));
+        return 1
+    };
+
+    
 
     return (
         <div className="container">
@@ -66,12 +68,32 @@ export default function Retrieve() {
                     {/* Recorded Takes */}
                     <div className="takes-box">
                         <div className="card-title">Recorded Takes</div>
-                        <div className="take-list">
-                            {recordedTakes.map((take, index) => (
-                                <div key={index} className="take-item">
-                                    {index + 1}. {take}
-                                </div>
-                            ))}
+                        <div className="takes-container">
+                            <div className="takes-title">CONVERT TAKES</div>
+                            <table className="take-list" style={{width: '100%'} }>
+                                <tbody>
+                                    {[1,2,3].map((item, index) => (
+                                        <tr key={index}>
+                                            <td
+                                                className="folder-name"
+                                                onClick={() => handleFolderClick(item.name)}
+                                                style={{ cursor: "pointer" }}
+                                            >
+                                                {item.name || 'test'}
+                                            </td>
+                                            <td style={{ textAlign: 'right' }} >{item.status || "waiting"}</td>
+                                            <td style={{textAlign: 'right'} }>
+                                                <button
+                                                    className="delete-button"
+                                                    onClick={() => handleDelete(item.name)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

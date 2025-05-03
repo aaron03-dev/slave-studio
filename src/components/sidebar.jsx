@@ -5,6 +5,7 @@ export function AppSidebar({ sec, setSec }) {
         <>
             <style>{`
         .sidebar {
+            z-index: 100;
           width: 200px;
           height: 100vh;
           background-color: #1e1e1e;
